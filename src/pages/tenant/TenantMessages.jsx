@@ -1,2 +1,14 @@
-import PlaceholderPage from '../../components/common/PlaceholderPage';
-export default function TenantMessages()    { return <PlaceholderPage title="Messages"    icon="💬" />; }
+import React, { useState } from 'react';
+import PageHeader from '../../components/layout/PageHeader';
+import Button from '../../components/common/Button';
+import Input from '../../components/common/Input';
+import Icon from '../../components/common/Icon';
+import Avatar from '../../components/common/Avatar';
+import { tenantConversations } from '../../data/tenantPortalData';
+import { TenantFeedback } from './components/TenantPageTools';
+
+export default function TenantMessages() {
+	const [selectedId, setSelectedId] = useState('owner'); const [message, setMessage] = useState(''); const [feedback, setFeedback] = useState(null); const selected = tenantConversations.find((item) => item.id === selectedId) || tenantConversations[0];
+	const send = (event) => { event.preventDefault(); if (!message.trim()) return; setMessage(''); setFeedback('Message queued in this frontend preview.'); };
+	return <div className="tenant-page"><PageHeader title="Messages" description="Contact your owner, maintenance team, and BuildSync support." /><div className="messages-chat-layout"><aside className="messages-sidebar"><div className="messages-sidebar__search"><strong>Conversations</strong></div><div className="messages-threads-list">{tenantConversations.map((conversation) => <button type="button" key={conversation.id} className={`messages-thread-item ${selected.id === conversation.id ? 'active' : ''}`} onClick={() => setSelectedId(conversation.id)}><Avatar name={conversation.name} size="sm" color={conversation.avatarColor} /><div className="messages-thread-content"><div className="messages-thread-name">{conversation.name}</div><div className="messages-thread-role">{conversation.role}</div><div className="messages-thread-preview">{conversation.messages[conversation.messages.length - 1].text}</div></div></button>)}</div></aside><section className="messages-chat-pane"><header className="messages-chat-header"><div className="messages-chat-header__identity"><Avatar name={selected.name} size="sm" color={selected.avatarColor} /><div><strong>{selected.name}</strong><div className="table-subtext">{selected.role}</div></div></div><Button size="sm" variant="secondary" icon={<Icon name="phone" size={15} />}>Call</Button></header><div className="messages-chat-body">{selected.messages.map((item, index) => <div key={`${item.time}-${index}`} className={`chat-bubble chat-bubble--${item.isMe ? 'me' : 'them'}`}>{item.text}<span className="chat-bubble-time">{item.time}</span></div>)}</div><form className="messages-chat-footer" onSubmit={send}><Input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Write a message..." /><Button type="submit" variant="primary" icon={<Icon name="send" size={16} />} aria-label="Send message">Send</Button></form></section></div><TenantFeedback message={feedback} onClose={() => setFeedback(null)} /></div>;
+}

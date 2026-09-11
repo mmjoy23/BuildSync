@@ -1,2 +1,13 @@
-import PlaceholderPage from '../../components/common/PlaceholderPage';
-export default function TenantFlat()        { return <PlaceholderPage title="My Flat"     icon="🏠" />; }
+import React, { useState } from 'react';
+import PageHeader from '../../components/layout/PageHeader';
+import Card from '../../components/common/Card';
+import Button from '../../components/common/Button';
+import Icon from '../../components/common/Icon';
+import StatusBadge from '../../components/common/StatusBadge';
+import { tenantFlat } from '../../data/tenantPortalData';
+import { TenantFeedback } from './components/TenantPageTools';
+
+export default function TenantFlat() {
+	const [feedback, setFeedback] = useState(null);
+	return <div className="tenant-page"><PageHeader title="My Flat" description="Your home, charges, parking, and property contact details." /><div className="tenant-flat-hero"><div><span className="tenant-flat-kicker">{tenantFlat.property}</span><h2>Unit {tenantFlat.unit}</h2><p><Icon name="map-pin" size={15} /> {tenantFlat.address}</p></div><StatusBadge status={tenantFlat.occupancy} /></div><div className="tenant-info-grid"><Card title="Flat Information"><div className="tenant-detail-grid">{[['Building', tenantFlat.property], ['Unit', tenantFlat.unit], ['Floor', tenantFlat.floor], ['Unit Type', tenantFlat.type], ['Bedrooms', tenantFlat.bedrooms], ['Bathrooms', tenantFlat.bathrooms], ['Approx. Area', tenantFlat.area], ['Move-in Date', tenantFlat.moveInDate]].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div></Card><Card title="Current Charges"><div className="tenant-charge-list"><div><span>Monthly Rent</span><strong>{tenantFlat.monthlyRent}</strong></div><div><span>Service Charge</span><strong>৳2,000</strong></div><div><span>Utilities</span><strong>৳5,080</strong></div><div><span>Parking</span><strong>৳1,500</strong></div><div className="tenant-charge-total"><span>Typical Monthly Total</span><strong>৳33,580</strong></div></div></Card><Card title="Assigned Parking"><div className="tenant-parking-callout"><Icon name="car" size={24} /><div><strong>{tenantFlat.parkingSlot}</strong><span>{tenantFlat.vehicle}</span></div><StatusBadge status="Assigned" /></div></Card><Card title="Property Contact"><div className="tenant-contact-card"><div><span>Owner / Property Manager</span><strong>{tenantFlat.owner}</strong><small>{tenantFlat.ownerPhone}</small></div><div className="tenant-contact-actions"><Button size="sm" variant="secondary" icon={<Icon name="mail" size={15} />} onClick={() => setFeedback('Opening a message with the property owner.')}>Message Owner</Button><Button size="sm" variant="ghost" icon={<Icon name="phone" size={15} />} onClick={() => setFeedback(`Calling ${tenantFlat.owner}...`)}>Call Owner</Button></div></div></Card></div><TenantFeedback message={feedback} onClose={() => setFeedback(null)} /></div>;
+}

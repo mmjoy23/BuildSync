@@ -2,6 +2,7 @@ import React from 'react';
 import Button from '../../../components/common/Button';
 import Icon from '../../../components/common/Icon';
 import { tenantProfile } from '../../../data/tenantDashboardData';
+import { useAuth } from '../../../context/AuthContext';
 
 /**
  * TenantWelcomeHeader
@@ -11,11 +12,12 @@ import { tenantProfile } from '../../../data/tenantDashboardData';
  * - Actions: "Message Owner", "Call Owner"
  */
 function TenantWelcomeHeader({ onMessageOwner, onCallOwner }) {
+  const { currentUser } = useAuth();
   return (
     <div className="tenant-header">
       <div>
         <h1 className="tenant-header__greeting">
-          Welcome, {tenantProfile.name}
+          Welcome, {currentUser?.name || tenantProfile.name}
         </h1>
         <div className="tenant-header__meta">
           <span className="tenant-header__flat-badge">{tenantProfile.flat}</span>

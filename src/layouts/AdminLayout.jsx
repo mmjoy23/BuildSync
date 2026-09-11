@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/layout/Sidebar';
 import Navbar from '../components/layout/Navbar';
 import PageContainer from '../components/layout/PageContainer';
+import { useAuth } from '../context/AuthContext';
 
 const adminNavItems = [
   { type: 'section', label: 'Platform' },
@@ -19,12 +20,6 @@ const adminNavItems = [
   { to: '/admin/settings',    label: 'System Settings',  iconName: 'settings' },
 ];
 
-const adminUser = {
-  name: 'Tanvir Hossain',
-  role: 'Super Administrator',
-  avatarColor: 'purple',
-};
-
 /**
  * AdminLayout
  * Role-based application shell for Platform Administrators.
@@ -32,6 +27,9 @@ const adminUser = {
  */
 function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
+  const sessionAdmin = { name: currentUser?.name || 'Admin', role: 'Super Administrator', avatarColor: 'purple' };
 
   return (
     <div className="app-shell">
@@ -39,7 +37,7 @@ function AdminLayout() {
         brandName="BuildSync"
         role="Admin Portal"
         items={adminNavItems}
-        user={adminUser}
+        user={sessionAdmin}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
@@ -48,9 +46,13 @@ function AdminLayout() {
         <Navbar
           onMenuToggle={() => setSidebarOpen((prev) => !prev)}
           searchPlaceholder="Search system users, logs, tickets..."
-          userName={adminUser.name}
+          userName={sessionAdmin.name}
           userRole="Admin"
           notificationCount={7}
+          onUserAction={(action) => {
+            if (action === 'logout') { logout(); navigate('/login', { replace: true }); }
+            if (action === 'settings') navigate('/admin/settings');
+          }}
         />
 
         <PageContainer>

@@ -1,2 +1,16 @@
-import PlaceholderPage from '../../components/common/PlaceholderPage';
-export default function OwnerMessages()    { return <PlaceholderPage title="Messages"    icon="💬" />; }
+import React, { useState } from 'react';
+import PageHeader from '../../components/layout/PageHeader';
+import Button from '../../components/common/Button';
+import Input from '../../components/common/Input';
+import Icon from '../../components/common/Icon';
+import Avatar from '../../components/common/Avatar';
+import { conversationsList } from '../../data/ownerPortalData';
+import { OwnerFeedback } from './components/OwnerPageTools';
+
+export default function OwnerMessages() {
+	const [selectedId, setSelectedId] = useState(conversationsList[0].id); const [search, setSearch] = useState(''); const [message, setMessage] = useState(''); const [feedback, setFeedback] = useState(null);
+	const selected = conversationsList.find((conversation) => conversation.id === selectedId) || conversationsList[0];
+	const threads = conversationsList.filter((conversation) => `${conversation.name} ${conversation.role}`.toLowerCase().includes(search.toLowerCase()));
+	const send = (event) => { event.preventDefault(); if (!message.trim()) return; setMessage(''); setFeedback('Message queued in this frontend preview.'); };
+	return <div className="owner-page"><PageHeader title="Messages" description="Keep tenant conversations and support requests in one place." /><div className="messages-chat-layout"><aside className="messages-sidebar"><div className="messages-sidebar__search"><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search conversations..." /></div><div className="messages-threads-list">{threads.map((conversation) => <button type="button" key={conversation.id} className={`messages-thread-item ${selected.id === conversation.id ? 'active' : ''}`} onClick={() => setSelectedId(conversation.id)}><Avatar name={conversation.name} size="sm" color={conversation.avatarColor} /><div className="messages-thread-content"><div className="messages-thread-header"><span className="messages-thread-name">{conversation.name}</span><span className="messages-thread-time">{conversation.lastTime}</span></div><div className="messages-thread-role">{conversation.role}</div><div className="messages-thread-preview">{conversation.messages[conversation.messages.length - 1].text}</div></div>{conversation.unread > 0 && <span className="message-unread-count">{conversation.unread}</span>}</button>)}</div></aside><section className="messages-chat-pane"><header className="messages-chat-header"><div className="messages-chat-header__identity"><Avatar name={selected.name} size="sm" color={selected.avatarColor} /><div><strong>{selected.name}</strong><div className="table-subtext">{selected.role}</div></div></div><Button size="sm" variant="secondary" icon={<Icon name="phone" size={15} />}>Call</Button></header><div className="messages-chat-body">{selected.messages.map((item) => <div key={item.id} className={`chat-bubble chat-bubble--${item.isMe ? 'me' : 'them'}`}>{item.text}<span className="chat-bubble-time">{item.time}</span></div>)}</div><form className="messages-chat-footer" onSubmit={send}><Input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Write a message..." /><Button type="submit" variant="primary" icon={<Icon name="send" size={16} />} aria-label="Send message">Send</Button></form></section></div><OwnerFeedback message={feedback} onClose={() => setFeedback(null)} /></div>;
+}

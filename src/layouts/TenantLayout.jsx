@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/layout/Sidebar';
 import Navbar from '../components/layout/Navbar';
 import PageContainer from '../components/layout/PageContainer';
+import { useAuth } from '../context/AuthContext';
 
 const tenantNavItems = [
   { type: 'section', label: 'My Home' },
@@ -20,12 +21,6 @@ const tenantNavItems = [
   { to: '/tenant/profile',     label: 'Profile',     iconName: 'user' },
 ];
 
-const tenantUser = {
-  name: 'Tanjim Ahmed',
-  role: 'Flat 3A Tenant',
-  avatarColor: 'green',
-};
-
 /**
  * TenantLayout
  * Role-based application shell for Residential Tenants.
@@ -33,6 +28,9 @@ const tenantUser = {
  */
 function TenantLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
+  const sessionTenant = { name: currentUser?.name || 'Tanjim Ahmed', role: 'Flat 3A Tenant', avatarColor: 'green' };
 
   return (
     <div className="app-shell">
@@ -40,7 +38,7 @@ function TenantLayout() {
         brandName="BuildSync"
         role="Tenant Portal"
         items={tenantNavItems}
-        user={tenantUser}
+        user={sessionTenant}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
@@ -49,9 +47,13 @@ function TenantLayout() {
         <Navbar
           onMenuToggle={() => setSidebarOpen((prev) => !prev)}
           searchPlaceholder="Search bills, requests, notices..."
-          userName={tenantUser.name}
+          userName={sessionTenant.name}
           userRole="Tenant"
           notificationCount={2}
+          onUserAction={(action) => {
+            if (action === 'logout') { logout(); navigate('/login', { replace: true }); }
+            if (action === 'settings') navigate('/tenant/profile');
+          }}
         />
 
         <PageContainer>

@@ -1,5 +1,6 @@
 import { RouterProvider } from 'react-router-dom';
 import router from './routes/index';
+import { AuthProvider } from './context/AuthContext';
 
 /**
  * App
@@ -7,7 +8,7 @@ import router from './routes/index';
  * All layout and page rendering is managed via the route tree.
  */
 function App() {
-  return <RouterProvider router={router} />;
+  return <AuthProvider><RouterProvider router={router} /></AuthProvider>;
 }
 
 export default App;

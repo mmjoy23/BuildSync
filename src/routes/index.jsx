@@ -20,6 +20,10 @@ import AdminLayout  from '../layouts/AdminLayout';
 
 // Auth
 import LoginPage from '../pages/auth/LoginPage';
+import RegisterPage from '../pages/auth/RegisterPage';
+import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
+import WelcomePage from '../pages/auth/WelcomePage';
+import AuthGuard from './AuthGuard';
 
 // Owner pages
 import OwnerDashboard   from '../pages/owner/OwnerDashboard';
@@ -68,7 +72,7 @@ const router = createBrowserRouter([
   {
     index: true,
     path: '/',
-    element: <Navigate to="/login" replace />,
+    element: <WelcomePage />,
   },
 
   // ── Auth ──────────────────────────────────────────────────
@@ -76,11 +80,13 @@ const router = createBrowserRouter([
     path: '/login',
     element: <LoginPage />,
   },
+  { path: '/register', element: <RegisterPage /> },
+  { path: '/forgot-password', element: <ForgotPasswordPage /> },
 
   // ── Owner routes ──────────────────────────────────────────
   {
     path: '/owner',
-    element: <OwnerLayout />,
+    element: <AuthGuard role="owner"><OwnerLayout /></AuthGuard>,
     children: [
       { index: true, element: <Navigate to="/owner/dashboard" replace /> },
       { path: 'dashboard',   element: <OwnerDashboard /> },
@@ -101,7 +107,7 @@ const router = createBrowserRouter([
   // ── Tenant routes ─────────────────────────────────────────
   {
     path: '/tenant',
-    element: <TenantLayout />,
+    element: <AuthGuard role="tenant"><TenantLayout /></AuthGuard>,
     children: [
       { index: true, element: <Navigate to="/tenant/dashboard" replace /> },
       { path: 'dashboard',   element: <TenantDashboard /> },
@@ -119,7 +125,7 @@ const router = createBrowserRouter([
   // ── Admin routes ──────────────────────────────────────────
   {
     path: '/admin',
-    element: <AdminLayout />,
+    element: <AuthGuard role="admin"><AdminLayout /></AuthGuard>,
     children: [
       { index: true, element: <Navigate to="/admin/dashboard" replace /> },
       { path: 'dashboard',   element: <AdminDashboard /> },

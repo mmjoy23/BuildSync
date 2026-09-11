@@ -16,6 +16,7 @@ import Input from '../../components/common/Input';
 import Select from '../../components/common/Select';
 import Button from '../../components/common/Button';
 import Toast from '../../components/common/Toast';
+import { useAuth } from '../../context/AuthContext';
 
 import { ownerProfile } from '../../data/ownerDashboardData';
 
@@ -33,6 +34,7 @@ import { ownerProfile } from '../../data/ownerDashboardData';
  * 9. Right-side Quick Contact Panel
  */
 export default function OwnerDashboard() {
+  const { currentUser } = useAuth();
   const [isAddPropertyOpen, setIsAddPropertyOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -46,7 +48,7 @@ export default function OwnerDashboard() {
     <div className="owner-dashboard">
       {/* 1. TOP PAGE HEADER */}
       <OwnerDashboardHeader
-        name={ownerProfile.name}
+        name={currentUser?.name || ownerProfile.name}
         greeting={ownerProfile.greeting}
         subtitle={ownerProfile.subtitle}
         onAddProperty={() => setIsAddPropertyOpen(true)}

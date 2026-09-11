@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/layout/Sidebar';
 import Navbar from '../components/layout/Navbar';
 import PageContainer from '../components/layout/PageContainer';
+import { useAuth } from '../context/AuthContext';
 
 const ownerNavItems = [
   { type: 'section', label: 'Overview' },
@@ -21,12 +22,6 @@ const ownerNavItems = [
   { to: '/owner/settings',    label: 'Settings',           iconName: 'settings' },
 ];
 
-const ownerUser = {
-  name: 'Samiul Bashar',
-  role: 'Property Owner',
-  avatarColor: 'blue',
-};
-
 /**
  * OwnerLayout
  * Role-based application shell for Property Owners.
@@ -34,6 +29,9 @@ const ownerUser = {
  */
 function OwnerLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
+  const sessionOwner = { name: currentUser?.name || 'Rahman Ahmed', role: 'Property Owner', avatarColor: 'blue' };
 
   return (
     <div className="app-shell">
@@ -41,7 +39,7 @@ function OwnerLayout() {
         brandName="BuildSync"
         role="Owner Portal"
         items={ownerNavItems}
-        user={ownerUser}
+        user={sessionOwner}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
@@ -50,9 +48,13 @@ function OwnerLayout() {
         <Navbar
           onMenuToggle={() => setSidebarOpen((prev) => !prev)}
           searchPlaceholder="Search anything..."
-          userName={ownerUser.name}
+          userName={sessionOwner.name}
           userRole="Owner"
           notificationCount={4}
+          onUserAction={(action) => {
+            if (action === 'logout') { logout(); navigate('/login', { replace: true }); }
+            if (action === 'settings') navigate('/owner/settings');
+          }}
         />
 
         <PageContainer>

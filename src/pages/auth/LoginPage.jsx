@@ -1,61 +1,33 @@
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import Button from '../../components/common/Button';
+import Alert from '../../components/common/Alert';
+import { getRoleHome, useAuth } from '../../context/AuthContext';
+import AuthField from './AuthField';
+import AuthShell from './AuthShell';
 
-function LoginPage() {
-  return (
-    <div className="auth-wrapper">
-      <div className="auth-card">
-        <div className="auth-card__brand">BuildSync</div>
-        <div className="auth-card__subtitle">
-          Property Management Platform
-        </div>
-        
-        <div className="auth-card__placeholder" style={{ marginBottom: '1.5rem' }}>
-          🔐 Authentication UI — (Phase 3+)
-          <br />
-          <small style={{ color: 'var(--color-text-secondary)' }}>Route: /login</small>
-        </div>
+export default function LoginPage() {
+  const { currentUser, login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [form, setForm] = useState({ email: '', password: '', remember: true });
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-        <div style={{ textAlign: 'left', marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.75rem' }}>
-            Quick Portal Access
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <Link
-              to="/owner/dashboard"
-              className="btn btn--primary btn--md btn--full"
-              style={{ justifyContent: 'center' }}
-            >
-              🏢 Enter Owner Portal
-            </Link>
-            <Link
-              to="/tenant/dashboard"
-              className="btn btn--secondary btn--md btn--full"
-              style={{ justifyContent: 'center' }}
-            >
-              🏠 Enter Tenant Portal
-            </Link>
-            <Link
-              to="/admin/dashboard"
-              className="btn btn--secondary btn--md btn--full"
-              style={{ justifyContent: 'center' }}
-            >
-              ⚙️ Enter Admin Panel
-            </Link>
-          </div>
-        </div>
+  useEffect(() => {
+    if (currentUser) navigate(getRoleHome(currentUser.role), { replace: true });
+  }, [currentUser, navigate]);
 
-        <div style={{ paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
-          <Link
-            to="/showcase"
-            className="btn btn--ghost btn--sm btn--full"
-            style={{ color: 'var(--color-primary)', fontWeight: 600 }}
-          >
-            ✨ View Shared Design System Showcase
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
+  if (currentUser) return <Navigate to={getRoleHome(currentUser.role)} replace />;
+
+  const submit = (event) => {
+    event.preventDefault(); setError(''); setIsLoading(true);
+    window.setTimeout(() => {
+      const user = login(form.email, form.password);
+      if (!user) { setError('Invalid email or password.'); setIsLoading(false); return; }
+      navigate(location.state?.from || getRoleHome(user.role), { replace: true });
+    }, 180);
+  };
+
+  return <AuthShell eyebrow="Welcome back" title="Sign in to your account" subtitle="Access your BuildSync workspace and keep everything moving." footer={<>Don't have an account? <Link to="/register">Create an account</Link></>}><form className="auth-form" onSubmit={submit}>{error && <Alert variant="danger" title="Sign in failed">{error}</Alert>}<AuthField id="login-email" label="Email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="you@example.com" autoComplete="email" required /><AuthField id="login-password" label="Password" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} placeholder="Enter your password" autoComplete="current-password" required /><div className="auth-form__row"><label className="auth-checkbox"><input type="checkbox" checked={form.remember} onChange={(event) => setForm({ ...form, remember: event.target.checked })} /> Remember me</label><Link to="/forgot-password">Forgot password?</Link></div><Button type="submit" variant="primary" fullWidth loading={isLoading}>{isLoading ? 'Signing in...' : 'Sign In'}</Button></form><div className="auth-demo-note">Demo accounts are available for Owner, Tenant, and Admin roles.</div></AuthShell>;
 }
-
-export default LoginPage;
