@@ -1,0 +1,375 @@
+/* ============================================================
+   BuildSync – Owner Portal Modular Styles
+   Extends base and dashboard styles for all Owner Portal views.
+   ============================================================ */
+
+/* ── Filter Bar & Toolbar ────────────────────────────────── */
+.owner-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-5);
+}
+
+.owner-toolbar__search-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.owner-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* ── Tab Bar ─────────────────────────────────────────────── */
+.owner-tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-5);
+  overflow-x: auto;
+}
+
+.owner-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-secondary);
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.owner-tab-btn:hover {
+  color: var(--color-text);
+}
+
+.owner-tab-btn.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: var(--fw-semibold);
+}
+
+/* ── Property Cards Grid ─────────────────────────────────── */
+.property-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-5);
+}
+
+.property-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--transition-base), border-color var(--transition-base), transform var(--transition-base);
+}
+
+.property-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-border-strong);
+  transform: translateY(-2px);
+}
+
+.property-card__header {
+  padding: var(--space-5);
+  border-bottom: 1px solid var(--color-divider);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.property-card__name {
+  font-size: var(--text-lg);
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+}
+
+.property-card__address {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+.property-card__body {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  flex: 1;
+}
+
+.property-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  text-align: center;
+  background: var(--color-divider);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+}
+
+.property-card__metric-val {
+  font-size: var(--text-base);
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+}
+
+.property-card__metric-lbl {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  font-weight: var(--fw-semibold);
+  margin-top: 2px;
+}
+
+.property-card__footer {
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-divider);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── Property Details Header ─────────────────────────────── */
+.property-details-hero {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+
+/* ── Messages Chat Interface ─────────────────────────────── */
+.messages-chat-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  min-height: 600px;
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+}
+
+.messages-sidebar {
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+}
+
+.messages-sidebar__search {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.messages-threads-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.messages-thread-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-divider);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  text-decoration: none;
+}
+
+.messages-thread-item:hover {
+  background: var(--color-divider);
+}
+
+.messages-thread-item.active {
+  background: var(--color-primary-subtle);
+  border-left: 3px solid var(--color-primary);
+}
+
+.messages-thread-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.messages-thread-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.messages-thread-name {
+  font-size: var(--text-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.messages-thread-time {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.messages-thread-role {
+  font-size: 0.72rem;
+  color: var(--color-primary);
+  font-weight: var(--fw-medium);
+}
+
+.messages-thread-preview {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+/* Chat Main Pane */
+.messages-chat-pane {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+}
+
+.messages-chat-header {
+  padding: var(--space-4) var(--space-6);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.messages-chat-body {
+  flex: 1;
+  padding: var(--space-6);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.chat-bubble {
+  max-width: 65%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  line-height: var(--lh-normal);
+  position: relative;
+}
+
+.chat-bubble--them {
+  align-self: flex-start;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  border-bottom-left-radius: var(--radius-xs);
+}
+
+.chat-bubble--me {
+  align-self: flex-end;
+  background: var(--color-primary);
+  color: var(--white);
+  border-bottom-right-radius: var(--radius-xs);
+}
+
+.chat-bubble-time {
+  font-size: 0.65rem;
+  margin-top: 4px;
+  display: block;
+  opacity: 0.75;
+  text-align: right;
+}
+
+.messages-chat-footer {
+  padding: var(--space-4) var(--space-6);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+/* ── Settings Sections ───────────────────────────────────── */
+.settings-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2);
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-text-secondary);
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.settings-nav-item:hover {
+  background: var(--color-divider);
+  color: var(--color-text);
+}
+
+.settings-nav-item.active {
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+  font-weight: var(--fw-semibold);
+}
+
+/* ── Responsive Media Queries ────────────────────────────── */
+@media (max-width: 900px) {
+  .messages-chat-layout {
+    grid-template-columns: 1fr;
+  }
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+}

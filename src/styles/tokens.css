@@ -1,0 +1,193 @@
+/* ============================================================
+   BuildSync Design Tokens
+   Central source of truth for all visual design values.
+   ============================================================ */
+
+:root {
+
+  /* ── Color Palette ─────────────────────────────────────── */
+
+  /* Slate / Navy scale */
+  --slate-950: #020617;
+  --slate-900: #0f172a;
+  --slate-800: #1e293b;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --slate-500: #64748b;
+  --slate-400: #94a3b8;
+  --slate-300: #cbd5e1;
+  --slate-200: #e2e8f0;
+  --slate-100: #f1f5f9;
+  --slate-50:  #f8fafc;
+
+  /* Blue scale (primary actions) */
+  --blue-900: #1e3a8a;
+  --blue-800: #1e40af;
+  --blue-700: #1d4ed8;
+  --blue-600: #2563eb;
+  --blue-500: #3b82f6;
+  --blue-400: #60a5fa;
+  --blue-300: #93c5fd;
+  --blue-200: #bfdbfe;
+  --blue-100: #dbeafe;
+  --blue-50:  #eff6ff;
+
+  /* Green scale (success / paid) */
+  --green-800: #166534;
+  --green-700: #15803d;
+  --green-600: #16a34a;
+  --green-500: #22c55e;
+  --green-100: #dcfce7;
+  --green-50:  #f0fdf4;
+
+  /* Red scale (danger / overdue) */
+  --red-800:  #991b1b;
+  --red-700:  #b91c1c;
+  --red-600:  #dc2626;
+  --red-500:  #ef4444;
+  --red-100:  #fee2e2;
+  --red-50:   #fef2f2;
+
+  /* Orange scale (pending / warning) */
+  --orange-800: #9a3412;
+  --orange-700: #c2410c;
+  --orange-500: #f97316;
+  --orange-100: #ffedd5;
+  --orange-50:  #fff7ed;
+
+  /* Yellow */
+  --yellow-700: #a16207;
+  --yellow-500: #eab308;
+  --yellow-100: #fef9c3;
+
+  /* Purple scale (analytics) */
+  --purple-800: #6b21a8;
+  --purple-700: #7e22ce;
+  --purple-600: #9333ea;
+  --purple-500: #a855f7;
+  --purple-100: #f3e8ff;
+  --purple-50:  #faf5ff;
+
+  --white: #ffffff;
+  --black: #000000;
+
+  /* ── Semantic Aliases ──────────────────────────────────── */
+  --color-bg:             #f4f6f9;
+  --color-surface:        #ffffff;
+  --color-border:         #e2e8f0;
+  --color-border-strong:  #cbd5e1;
+  --color-divider:        #f1f5f9;
+
+  --color-text:           #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-muted:     #94a3b8;
+  --color-text-disabled:  #cbd5e1;
+  --color-text-inverse:   #ffffff;
+
+  --color-primary:        #2563eb;
+  --color-primary-hover:  #1d4ed8;
+  --color-primary-active: #1e40af;
+  --color-primary-light:  #dbeafe;
+  --color-primary-subtle: #eff6ff;
+
+  --color-success:        #22c55e;
+  --color-success-dark:   #15803d;
+  --color-success-bg:     #f0fdf4;
+  --color-success-border: #dcfce7;
+
+  --color-warning:        #f97316;
+  --color-warning-dark:   #c2410c;
+  --color-warning-bg:     #fff7ed;
+  --color-warning-border: #ffedd5;
+
+  --color-danger:         #ef4444;
+  --color-danger-dark:    #b91c1c;
+  --color-danger-bg:      #fef2f2;
+  --color-danger-border:  #fee2e2;
+
+  --color-info:           #3b82f6;
+  --color-info-dark:      #1d4ed8;
+  --color-info-bg:        #eff6ff;
+  --color-info-border:    #dbeafe;
+
+  /* ── Sidebar ───────────────────────────────────────────── */
+  --sidebar-bg:            #0f172a;
+  --sidebar-border:        rgba(255,255,255,0.06);
+  --sidebar-text:          #94a3b8;
+  --sidebar-text-hover:    #e2e8f0;
+  --sidebar-text-active:   #ffffff;
+  --sidebar-item-hover-bg: rgba(255,255,255,0.06);
+  --sidebar-item-active-bg:#1e40af;
+  --sidebar-section-label: #475569;
+  --sidebar-width:         240px;
+
+  /* ── Spacing (4px base grid) ───────────────────────────── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  28px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ── Border Radius ─────────────────────────────────────── */
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-2xl:  16px;
+  --radius-full: 9999px;
+
+  /* ── Typography ────────────────────────────────────────── */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+               Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+  --text-3xl:  1.875rem;
+  --text-4xl:  2.25rem;
+
+  --fw-normal:   400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  --lh-tight:   1.25;
+  --lh-normal:  1.5;
+  --lh-relaxed: 1.625;
+
+  /* ── Shadows ───────────────────────────────────────────── */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+
+  /* ── Transitions ───────────────────────────────────────── */
+  --transition-fast: 0.12s ease;
+  --transition-base: 0.2s ease;
+  --transition-slow: 0.3s ease;
+
+  /* ── Z-index ───────────────────────────────────────────── */
+  --z-dropdown: 100;
+  --z-sticky:   200;
+  --z-navbar:   300;
+  --z-overlay:  400;
+  --z-modal:    500;
+  --z-toast:    600;
+
+  /* ── Layout ────────────────────────────────────────────── */
+  --navbar-height: 56px;
+  --page-padding:  var(--space-6);
+  --card-padding:  var(--space-5);
+}

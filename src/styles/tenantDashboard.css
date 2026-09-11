@@ -1,0 +1,257 @@
+/* ============================================================
+   BuildSync – Tenant Dashboard Styles
+   Specific layout, receipt, and notice styles for Phase 5.
+   ============================================================ */
+
+/* ── Overall Layout Grid ─────────────────────────────────── */
+.tenant-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.tenant-dashboard__main-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.tenant-dashboard__content-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.tenant-dashboard__side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* ── Welcome Header ──────────────────────────────────────── */
+.tenant-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.tenant-header__greeting {
+  font-size: var(--text-2xl);
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+  line-height: var(--lh-tight);
+}
+
+.tenant-header__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 4px;
+}
+
+.tenant-header__flat-badge {
+  font-size: var(--text-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--blue-700);
+  background: var(--blue-50);
+  border: 1px solid var(--blue-200);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+}
+
+.tenant-header__building {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--fw-medium);
+}
+
+.tenant-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* ── Summary Cards Grid ──────────────────────────────────── */
+.tenant-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+}
+
+/* Prominent Current Bill Card */
+.stat-card--prominent {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1.5px solid var(--blue-300);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card--prominent::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--color-danger);
+}
+
+/* ── Bill Details Receipt Card ───────────────────────────── */
+.bill-receipt-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.bill-receipt-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bill-receipt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px dashed var(--color-divider);
+  font-size: var(--text-sm);
+}
+
+.bill-receipt-row__label {
+  color: var(--color-text-secondary);
+}
+
+.bill-receipt-row__amount {
+  font-weight: var(--fw-semibold);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+}
+
+.bill-receipt-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: var(--space-3) 0 var(--space-1);
+  border-top: 2px solid var(--color-border);
+  margin-top: var(--space-1);
+}
+
+.bill-receipt-total-row__label {
+  font-size: var(--text-base);
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+}
+
+.bill-receipt-total-row__amount {
+  font-size: var(--text-2xl);
+  font-weight: var(--fw-bold);
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+}
+
+.bill-receipt-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.bill-receipt-due {
+  font-size: var(--text-xs);
+  color: var(--color-danger);
+  font-weight: var(--fw-semibold);
+}
+
+/* ── Notices Panel ───────────────────────────────────────── */
+.notices-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.notice-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+  text-decoration: none;
+}
+
+.notice-item:hover {
+  background: var(--color-divider);
+  border-color: var(--color-border-strong);
+  transform: translateY(-1px);
+}
+
+.notice-item__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notice-item__icon--blue   { background: var(--blue-50);   color: var(--blue-600); }
+.notice-item__icon--green  { background: var(--green-50);  color: var(--green-600); }
+.notice-item__icon--orange { background: var(--orange-50); color: var(--orange-600); }
+
+.notice-item__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notice-item__title {
+  font-size: var(--text-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text);
+}
+
+.notice-item__info {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  line-height: var(--lh-normal);
+}
+
+.notice-item__time {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  font-weight: var(--fw-medium);
+  margin-top: 2px;
+}
+
+/* ── Responsive Behavior ─────────────────────────────────── */
+@media (max-width: 1100px) {
+  .tenant-dashboard__main-layout {
+    grid-template-columns: 1fr;
+  }
+  .tenant-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .tenant-summary-grid {
+    grid-template-columns: 1fr;
+  }
+  .tenant-header {
+    flex-direction: column;
+  }
+}
