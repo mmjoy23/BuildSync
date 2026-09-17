@@ -1,0 +1,456 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  TENANT
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+}
+
+enum UnitStatus {
+  OCCUPIED
+  VACANT
+  MAINTENANCE
+}
+
+enum LeaseStatus {
+  ACTIVE
+  TERMINATED
+  PENDING
+}
+
+enum BillStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+enum BillItemType {
+  RENT
+  ELECTRICITY
+  WATER
+  GAS
+  SERVICE_CHARGE
+  PARKING
+  OTHER
+}
+
+enum PaymentMethod {
+  BKASH
+  NAGAD
+  CASH
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  VERIFIED
+  FAILED
+}
+
+enum MaintenanceStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum NoticeCategory {
+  MAINTENANCE
+  GENERAL
+  POLICY
+  BILLING
+}
+
+enum NoticeAudience {
+  ALL_TENANTS
+  PROPERTY_SPECIFIC
+}
+
+enum NoticeStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum UtilityType {
+  ELECTRICITY
+  WATER
+  GAS
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+// 1. User Model
+model User {
+  id           String     @id @default(uuid())
+  name         String
+  email        String     @unique
+  passwordHash String     @map("password_hash")
+  role         Role       @default(TENANT)
+  phone        String?
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  properties               Property[]                @relation("OwnerProperties")
+  leases                   Lease[]                   @relation("TenantLeases")
+  payments                 Payment[]                 @relation("TenantPayments")
+  maintenanceRequests      MaintenanceRequest[]      @relation("TenantMaintenanceRequests")
+  authoredNotices          Notice[]                  @relation("AuthorNotices")
+  conversationParticipants ConversationParticipant[] @relation("UserConversations")
+  messages                 Message[]                 @relation("UserMessages")
+  supportTickets           SupportTicket[]           @relation("UserSupportTickets")
+
+  @@map("users")
+}
+
+// 2. Property Model
+model Property {
+  id           String   @id @default(uuid())
+  ownerId      String   @map("owner_id")
+  name         String
+  address      String   @db.Text
+  yearBuilt    Int?     @map("year_built")
+  propertyType String   @default("Residential") @map("property_type")
+  status       String   @default("Active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  owner        User          @relation("OwnerProperties", fields: [ownerId], references: [id], onDelete: Cascade)
+  units        Unit[]
+  parkingSlots ParkingSlot[]
+  expenses     Expense[]
+  notices      Notice[]
+
+  @@index([ownerId])
+  @@map("properties")
+}
+
+// 3. Unit (Flat) Model
+model Unit {
+  id          String     @id @default(uuid())
+  propertyId  String     @map("property_id")
+  unitNumber  String     @map("unit_number")
+  floorNumber String     @map("floor_number")
+  bedrooms    Int?
+  bathrooms   Int?
+  areaSqft    Int?       @map("area_sqft")
+  status      UnitStatus @default(VACANT)
+  baseRent    Decimal    @map("base_rent") @db.Decimal(10, 2)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  property            Property             @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  leases              Lease[]
+  utilityReadings     UtilityReading[]
+  maintenanceRequests MaintenanceRequest[]
+  conversations       Conversation[]
+
+  @@unique([propertyId, unitNumber])
+  @@index([propertyId])
+  @@map("units")
+}
+
+// 4. Lease Model (Tenant Occupancy / Agreement)
+model Lease {
+  id         String      @id @default(uuid())
+  unitId     String      @map("unit_id")
+  tenantId   String      @map("tenant_id")
+  startDate  DateTime    @map("start_date") @db.Date
+  endDate    DateTime?   @map("end_date") @db.Date
+  agreedRent Decimal     @map("agreed_rent") @db.Decimal(10, 2)
+  status     LeaseStatus @default(ACTIVE)
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt  DateTime    @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  unit         Unit          @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  tenant       User          @relation("TenantLeases", fields: [tenantId], references: [id], onDelete: Restrict)
+  bills        Bill[]
+  parkingSlots ParkingSlot[]
+
+  @@index([unitId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("leases")
+}
+
+// 5. ParkingSlot Model
+model ParkingSlot {
+  id             String   @id @default(uuid())
+  propertyId     String   @map("property_id")
+  slotLabel      String   @map("slot_label")
+  currentLeaseId String?  @map("current_lease_id")
+  vehicleInfo    String?  @map("vehicle_info")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  lease    Lease?   @relation(fields: [currentLeaseId], references: [id], onDelete: SetNull)
+
+  @@unique([propertyId, slotLabel])
+  @@index([propertyId])
+  @@index([currentLeaseId])
+  @@map("parking_slots")
+}
+
+// 6. Bill Model (Aggregate Monthly Invoice)
+model Bill {
+  id           String     @id @default(uuid())
+  leaseId      String     @map("lease_id")
+  billingMonth String     @map("billing_month")
+  dueDate      DateTime   @map("due_date") @db.Date
+  totalAmount  Decimal    @map("total_amount") @db.Decimal(10, 2)
+  status       BillStatus @default(PENDING)
+  publishedAt  DateTime?  @map("published_at") @db.Timestamptz()
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  lease    Lease      @relation(fields: [leaseId], references: [id], onDelete: Restrict)
+  items    BillItem[]
+  payments Payment[]
+
+  @@unique([leaseId, billingMonth])
+  @@index([leaseId])
+  @@index([status])
+  @@map("bills")
+}
+
+// 7. BillItem Model (Line-Item Breakdown)
+model BillItem {
+  id          String       @id @default(uuid())
+  billId      String       @map("bill_id")
+  itemType    BillItemType @map("item_type")
+  description String?
+  amount      Decimal      @db.Decimal(10, 2)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  bill Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@index([billId])
+  @@map("bill_items")
+}
+
+// 8. Payment Model
+model Payment {
+  id            String        @id @default(uuid())
+  billId        String        @map("bill_id")
+  tenantId      String        @map("tenant_id")
+  amount        Decimal       @db.Decimal(10, 2)
+  method        PaymentMethod
+  transactionId String?       @unique @map("transaction_id")
+  receiptNumber String?       @unique @map("receipt_number")
+  status        PaymentStatus @default(PENDING)
+  paymentDate   DateTime      @default(now()) @map("payment_date") @db.Timestamptz()
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  bill   Bill @relation(fields: [billId], references: [id], onDelete: Restrict)
+  tenant User @relation("TenantPayments", fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([billId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("payments")
+}
+
+// 9. UtilityReading Model
+model UtilityReading {
+  id              String      @id @default(uuid())
+  unitId          String      @map("unit_id")
+  utilityType     UtilityType @map("utility_type")
+  readingDate     DateTime    @map("reading_date") @db.Date
+  previousReading Decimal?    @map("previous_reading") @db.Decimal(10, 2)
+  currentReading  Decimal     @map("current_reading") @db.Decimal(10, 2)
+  costPerUnit     Decimal?    @map("cost_per_unit") @db.Decimal(10, 2)
+  totalCost       Decimal     @map("total_cost") @db.Decimal(10, 2)
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@index([unitId])
+  @@index([readingDate])
+  @@map("utility_readings")
+}
+
+// 10. MaintenanceRequest Model
+model MaintenanceRequest {
+  id          String            @id @default(uuid())
+  tenantId    String            @map("tenant_id")
+  unitId      String            @map("unit_id")
+  issueTitle  String            @map("issue_title")
+  description String            @db.Text
+  priority    Priority          @default(MEDIUM)
+  status      MaintenanceStatus @default(OPEN)
+  repairCost  Decimal?          @map("repair_cost") @db.Decimal(10, 2)
+  assignedTo  String?           @map("assigned_to")
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime          @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  tenant User @relation("TenantMaintenanceRequests", fields: [tenantId], references: [id], onDelete: Restrict)
+  unit   Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([unitId])
+  @@index([status])
+  @@map("maintenance_requests")
+}
+
+// 11. Notice Model
+model Notice {
+  id          String         @id @default(uuid())
+  authorId    String         @map("author_id")
+  propertyId  String?        @map("property_id")
+  title       String
+  category    NoticeCategory @default(GENERAL)
+  audience    NoticeAudience @default(ALL_TENANTS)
+  details     String         @db.Text
+  status      NoticeStatus   @default(PUBLISHED)
+  publishDate DateTime       @default(now()) @map("publish_date") @db.Timestamptz()
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime       @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  author   User      @relation("AuthorNotices", fields: [authorId], references: [id], onDelete: Restrict)
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([propertyId])
+  @@map("notices")
+}
+
+// 12. Expense Model
+model Expense {
+  id          String   @id @default(uuid())
+  propertyId  String   @map("property_id")
+  category    String
+  amount      Decimal  @db.Decimal(10, 2)
+  expenseDate DateTime @map("expense_date") @db.Date
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([expenseDate])
+  @@map("expenses")
+}
+
+// 13. Conversation Model
+model Conversation {
+  id        String   @id @default(uuid())
+  unitId    String?  @map("unit_id")
+  subject   String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  unit         Unit?                     @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([unitId])
+  @@map("conversations")
+}
+
+// 14. ConversationParticipant Model
+model ConversationParticipant {
+  id             String    @id @default(uuid())
+  conversationId String    @map("conversation_id")
+  userId         String    @map("user_id")
+  lastReadAt     DateTime? @map("last_read_at") @db.Timestamptz()
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+
+  // Relations
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation("UserConversations", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@index([userId])
+  @@map("conversation_participants")
+}
+
+// 15. Message Model
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String   @map("conversation_id")
+  senderId       String   @map("sender_id")
+  content        String   @db.Text
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  // Relations
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("UserMessages", fields: [senderId], references: [id], onDelete: Restrict)
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@map("messages")
+}
+
+// 16. SupportTicket Model
+model SupportTicket {
+  id          String              @id @default(uuid())
+  userId      String              @map("user_id")
+  subject     String
+  description String              @db.Text
+  priority    Priority            @default(MEDIUM)
+  status      SupportTicketStatus @default(OPEN)
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime            @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  user User @relation("UserSupportTickets", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("support_tickets")
+}
+
+// 17. SystemSetting Model
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@map("system_settings")
+}

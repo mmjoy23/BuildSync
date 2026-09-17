@@ -1,0 +1,1055 @@
+﻿# BuildSync Backend â€” Phase 4: Billing + Bill Items + Payments
+
+Phase 1, Phase 2, and Phase 3 are COMPLETE and verified.
+
+Current confirmed architecture:
+
+User
+  â†“
+Property
+  â†“
+Unit
+  â†“
+Lease
+  â†“
+Bill
+  â†“
+BillItem
+  â†“
+Payment
+
+The existing Prisma schema already contains:
+- Bill
+- BillItem
+- Payment
+- Lease
+- Unit
+- Property
+- User
+
+No Prisma schema changes should be necessary.
+
+==================================================
+IMPORTANT PHASE 4 SCOPE
+==================================================
+
+Implement ONLY:
+
+1. Bills
+2. Bill Items
+3. Payment records
+4. Bill totals
+5. Partial payments
+6. Bill payment status
+7. Tenant bill access
+8. Owner bill management
+9. Admin bill management
+10. Receipt generation/data
+11. Backend validation and financial consistency
+
+DO NOT implement:
+- real bKash API
+- real Nagad API
+- payment gateway redirects
+- provider webhooks
+- automatic late fees
+- automatic recurring billing jobs
+- frontend integration
+- frontend payment UI
+- notifications
+- messaging
+- maintenance
+- parking management
+- utilities management
+
+Real payment-provider integration will be a later phase.
+
+==================================================
+BUSINESS RELATIONSHIP
+==================================================
+
+A bill belongs to a Lease.
+
+Therefore:
+
+Owner
+ â†’ Property
+ â†’ Unit
+ â†’ Lease
+ â†’ Bill
+ â†’ BillItems
+ â†’ Payments
+
+Tenant access must always be scoped through the authenticated tenant's lease.
+
+Owner access must always be scoped through:
+
+authenticated owner
+ â†’ owned property
+ â†’ unit
+ â†’ lease
+ â†’ bill
+
+Admin has platform-wide access.
+
+Never trust arbitrary IDs from the frontend without verifying these relationships.
+
+==================================================
+1. BILL ENDPOINTS
+==================================================
+
+Implement:
+
+GET    /api/bills
+GET    /api/bills/:id
+POST   /api/bills
+PUT    /api/bills/:id
+DELETE /api/bills/:id
+
+All protected by authentication.
+
+Authorization:
+
+ADMIN:
+- Can view/create/update bills for all properties.
+
+OWNER:
+- Can view/create/update bills only for leases belonging to units in properties they own.
+
+TENANT:
+- Can only view their own bills.
+- Tenant cannot create bills.
+- Tenant cannot modify bills.
+- Tenant cannot delete bills.
+
+==================================================
+2. TENANT BILL ENDPOINT
+==================================================
+
+Implement a safe tenant-specific endpoint:
+
+GET /api/tenant/bills
+
+Requirements:
+- requireAuth
+- requireRole("TENANT")
+- identify tenant using authenticated user ID
+- return only bills belonging to that tenant's active/current or historical leases as appropriate
+- never accept tenantId from query/body
+
+Support useful filtering if straightforward:
+
+?status=PENDING
+?status=PAID
+?status=OVERDUE
+
+Do not expose another tenant's data.
+
+==================================================
+3. BILL CREATION
+==================================================
+
+POST /api/bills
+
+Allowed:
+- OWNER
+- ADMIN
+
+Tenant must receive 403.
+
+Request should contain information necessary to identify the lease and bill:
+
+Example:
+
+{
+  "leaseId": "...",
+  "billingMonth": "2026-09",
+  "dueDate": "2026-09-10",
+  "items": [
+    {
+      "type": "RENT",
+      "description": "Monthly Rent",
+      "amount": "25000.00"
+    },
+    {
+      "type": "ELECTRICITY",
+      "description": "Electricity",
+      "amount": "3200.00"
+    },
+    {
+      "type": "WATER",
+      "description": "Water",
+      "amount": "800.00"
+    },
+    {
+      "type": "GAS",
+      "description": "Gas",
+      "amount": "1080.00"
+    },
+    {
+      "type": "SERVICE_CHARGE",
+      "description": "Service Charge",
+      "amount": "2000.00"
+    },
+    {
+      "type": "PARKING",
+      "description": "Parking",
+      "amount": "1500.00"
+    }
+  ]
+}
+
+Use the actual Prisma field names from the existing schema.
+
+IMPORTANT:
+The frontend-provided total must NOT be trusted.
+
+Backend must:
+
+1. Validate every item.
+2. Calculate total from BillItems.
+3. Store the calculated total in Bill.totalAmount.
+4. Never use a client-provided total as authoritative.
+
+For the example above:
+
+25000
++ 3200
++ 800
++ 1080
++ 2000
++ 1500
+= 33580
+
+Bill.totalAmount must become:
+
+33580.00
+
+==================================================
+4. BILL ITEM VALIDATION
+==================================================
+
+Use Zod.
+
+Each BillItem must contain:
+- valid BillItemType
+- description where required by schema
+- valid positive Decimal amount
+
+Allowed types are the existing enum values:
+
+RENT
+ELECTRICITY
+WATER
+GAS
+SERVICE_CHARGE
+PARKING
+OTHER
+
+Reject:
+- negative amounts
+- invalid numeric strings
+- NaN
+- Infinity
+- invalid enum values
+- malformed descriptions
+- empty item lists
+
+Use Decimal-safe handling.
+
+Do NOT calculate money using JavaScript floating point.
+
+==================================================
+5. BILLING MONTH
+==================================================
+
+Use the existing Bill.billingMonth field.
+
+Enforce:
+
+A lease cannot have more than one bill for the same billing month.
+
+The existing unique constraint:
+
+[leaseId, billingMonth]
+
+must be respected.
+
+If duplicate bill is attempted:
+- return a safe 409 Conflict response.
+
+Do not create duplicate monthly bills.
+
+==================================================
+6. BILL TOTAL
+==================================================
+
+Backend must be the authoritative source for Bill.totalAmount.
+
+When creating a bill:
+
+totalAmount =
+SUM(all BillItem.amount)
+
+Use Prisma Decimal or equivalent Decimal-safe arithmetic.
+
+Never do:
+
+Number(amount)
+
+for financial calculations.
+
+Do not trust:
+
+req.body.totalAmount
+
+If the request contains totalAmount:
+- ignore it, or
+- reject it as an unsupported field.
+
+Prefer rejecting unexpected financial fields through validation.
+
+==================================================
+7. BILL UPDATE
+==================================================
+
+PUT /api/bills/:id
+
+Allowed:
+- OWNER
+- ADMIN
+
+Tenant:
+- 403
+
+Before update:
+- verify authorization
+- load current bill
+- verify lease/property ownership
+
+Allowed fields should include appropriate:
+- dueDate
+- status only where appropriate
+- bill items
+
+If BillItems are changed:
+
+1. Validate new items.
+2. Recalculate total.
+3. Update BillItems.
+4. Recalculate Bill.totalAmount.
+
+Do not allow a frontend-supplied total to override calculation.
+
+==================================================
+8. PAYMENT RECORDS
+==================================================
+
+Implement:
+
+GET  /api/bills/:billId/payments
+POST /api/bills/:billId/payments
+GET  /api/payments/:id
+
+Authorization:
+
+ADMIN:
+- view/manage all payment records.
+
+OWNER:
+- view payment records for bills belonging to their properties.
+- may view payment history.
+- do not allow owner to fake a tenant payment.
+
+TENANT:
+- view payments for their own bills.
+- tenant can create a payment record for their own bill as an INTERNAL payment simulation for development/testing.
+- tenant cannot create a payment against another tenant's bill.
+
+This is NOT a real payment gateway yet.
+
+==================================================
+9. INTERNAL PAYMENT CREATION
+==================================================
+
+POST /api/bills/:billId/payments
+
+For now, this represents an internal payment record.
+
+Example:
+
+{
+  "amount": "10000.00",
+  "method": "BKASH",
+  "transactionId": "DEMO-TXN-001"
+}
+
+Allowed methods are existing enum values:
+
+BKASH
+NAGAD
+CASH
+BANK_TRANSFER
+
+Payment status should initially be:
+
+PENDING
+
+unless the endpoint is explicitly designed as an admin/cash verification action.
+
+IMPORTANT:
+
+Do NOT pretend that a bKash/Nagad payment has actually been verified.
+
+No external provider API is being called in this phase.
+
+==================================================
+10. PAYMENT AMOUNT VALIDATION
+==================================================
+
+Payment amount must be:
+
+> 0
+
+and must not exceed the bill's remaining unpaid amount.
+
+Calculate:
+
+remaining =
+bill.totalAmount - SUM(verified payments)
+
+If:
+
+payment.amount > remaining
+
+reject with:
+
+HTTP 400 or 409
+
+Do not silently create overpayments.
+
+Partial payments MUST be supported.
+
+Example:
+
+Bill total:
+33580
+
+Payment 1:
+10000
+
+Remaining:
+23580
+
+Payment 2:
+5000
+
+Remaining:
+18580
+
+This is valid.
+
+==================================================
+11. PAYMENT STATUS
+==================================================
+
+Use the existing PaymentStatus enum:
+
+PENDING
+VERIFIED
+FAILED
+
+Only VERIFIED payments count toward the bill's paid amount.
+
+PENDING payments do not reduce the bill balance.
+
+FAILED payments do not reduce the bill balance.
+
+==================================================
+12. PAYMENT VERIFICATION
+==================================================
+
+Because there is no real payment gateway yet, implement a controlled internal verification mechanism.
+
+Suggested:
+
+PATCH /api/payments/:id/verify
+
+Allowed:
+- ADMIN
+- OWNER only if appropriate according to the existing architecture
+
+Do NOT allow a normal TENANT to mark their own payment VERIFIED.
+
+When verified:
+
+1. Confirm payment exists.
+2. Confirm it is currently PENDING.
+3. Confirm amount is still valid against remaining bill balance.
+4. Set Payment.status = VERIFIED.
+5. Set verification date if the existing model supports it.
+6. Generate/store receipt number.
+7. Recalculate bill payment state.
+
+Do this transactionally where appropriate.
+
+If an admin verifies a payment, it should become a genuine internal verified record.
+
+==================================================
+13. RECEIPT NUMBER
+==================================================
+
+When a payment becomes VERIFIED:
+
+Generate a unique receipt number.
+
+Example format:
+
+BS-2026-000001
+
+Use the existing Payment.receiptNumber field.
+
+Requirements:
+- unique
+- deterministic enough for testing
+- collision-safe
+
+Do not use the database ID directly as a public receipt number.
+
+==================================================
+14. BILL PAYMENT STATUS
+==================================================
+
+Use the existing BillStatus enum:
+
+PENDING
+PAID
+OVERDUE
+
+Important:
+
+BillStatus should reflect verified payments and due date.
+
+Calculate:
+
+paidAmount =
+SUM(Payment.amount WHERE status = VERIFIED)
+
+remainingAmount =
+totalAmount - paidAmount
+
+Rules:
+
+If remainingAmount <= 0:
+    Bill.status = PAID
+
+Else if current date > dueDate:
+    Bill.status = OVERDUE
+
+Else:
+    Bill.status = PENDING
+
+Do not create a new status enum.
+
+Do not automatically create late fees.
+
+==================================================
+15. PARTIAL PAYMENT RESPONSE
+==================================================
+
+Bill responses should provide:
+
+- totalAmount
+- paidAmount
+- remainingAmount
+- status
+
+Example:
+
+{
+  "success": true,
+  "data": {
+    "id": "...",
+    "billingMonth": "2026-09",
+    "totalAmount": "33580.00",
+    "paidAmount": "10000.00",
+    "remainingAmount": "23580.00",
+    "status": "PENDING"
+  }
+}
+
+These values must be calculated by the backend.
+
+Do not store paidAmount/remainingAmount as independent authoritative database values unless the existing schema already requires it.
+
+==================================================
+16. BILL DETAILS
+==================================================
+
+GET /api/bills/:id
+
+Return:
+
+- bill information
+- lease summary
+- unit summary
+- property summary where appropriate
+- tenant-safe information according to requester role
+- BillItems
+- payments
+- calculated:
+  - totalAmount
+  - paidAmount
+  - remainingAmount
+  - status
+
+Do not expose unnecessary sensitive owner/admin data to tenants.
+
+==================================================
+17. BILL LIST
+==================================================
+
+GET /api/bills
+
+ADMIN:
+- all bills
+
+OWNER:
+- only bills from their properties
+
+TENANT:
+- only their bills
+
+Support useful query parameters where straightforward:
+
+status
+billingMonth
+leaseId
+propertyId
+
+IMPORTANT:
+Every filter must still respect authorization.
+
+A tenant must never bypass ownership scoping by adding:
+
+?propertyId=...
+or
+?leaseId=...
+
+==================================================
+18. BILL DELETION
+==================================================
+
+DELETE /api/bills/:id
+
+Do NOT blindly delete bills with payments.
+
+If a bill has any payment records:
+- prevent deletion.
+- return 409 Conflict.
+
+Prefer preserving financial history.
+
+Only allow deletion of safe/unpaid bills where appropriate.
+
+ADMIN has broader permission but should still not casually destroy financial history.
+
+==================================================
+19. TRANSACTIONAL CONSISTENCY
+==================================================
+
+Use Prisma transactions where necessary.
+
+Particularly for:
+
+Bill creation:
+- create Bill
+- create BillItems
+- calculate/store total
+
+Payment verification:
+- verify payment
+- generate receipt
+- update bill status
+
+Bill item replacement:
+- replace/update items
+- recalculate total
+
+Ensure partial failures do not leave inconsistent financial records.
+
+==================================================
+20. DECIMAL HANDLING
+==================================================
+
+This is critical.
+
+The Prisma schema uses Decimal for money.
+
+Use:
+
+Prisma Decimal
+
+or equivalent safe Decimal operations.
+
+Do NOT use:
+
+parseFloat()
+Number()
+floating point arithmetic
+
+for financial totals.
+
+When returning JSON:
+- use strings for monetary values.
+
+Example:
+
+"33580.00"
+
+not:
+
+33580
+
+if that would lose Decimal precision.
+
+==================================================
+21. AUTHORIZATION
+==================================================
+
+Reuse Phase 2:
+
+requireAuth
+requireRole
+
+Do not duplicate authentication logic.
+
+Owner authorization must use the actual relationship:
+
+authenticated OWNER
+ â†’ Property.ownerId
+ â†’ Unit.propertyId
+ â†’ Lease.unitId
+ â†’ Bill.leaseId
+
+Tenant authorization must use:
+
+authenticated TENANT
+ â†’ Lease.tenantId
+ â†’ Bill.leaseId
+
+Admin:
+- platform-wide access.
+
+Never trust:
+ownerId
+tenantId
+propertyId
+
+from request body as proof of authorization.
+
+==================================================
+22. VALIDATORS
+==================================================
+
+Create appropriate Zod validators:
+
+bill.validators.js
+payment.validators.js
+
+Validate:
+- IDs
+- billing month
+- due date
+- item types
+- descriptions
+- Decimal amounts
+- payment method
+- transactionId
+
+Reject unexpected fields where practical.
+
+==================================================
+23. SERVICES / CONTROLLERS
+==================================================
+
+Use clean separation:
+
+controllers/
+  bill.controller.js
+  payment.controller.js
+
+services/
+  bill.service.js
+  payment.service.js
+
+validators/
+  bill.validators.js
+  payment.validators.js
+
+routes/
+  bill.routes.js
+  payment.routes.js
+
+Reuse existing Prisma client and error handling.
+
+==================================================
+24. API ROUTES
+==================================================
+
+Register routes such as:
+
+/api/bills
+/api/payments
+/api/tenant/bills
+
+Preserve:
+
+/api/health
+/api/auth/*
+
+Preserve all Phase 3 property/unit/lease routes.
+
+Do not break existing routes.
+
+==================================================
+25. FRONTEND
+==================================================
+
+DO NOT MODIFY THE FRONTEND.
+
+Do NOT connect frontend to the new billing APIs yet.
+
+Backend-only phase.
+
+==================================================
+26. REAL PAYMENT PROVIDERS
+==================================================
+
+DO NOT implement real bKash/Nagad integration in this phase.
+
+Do not:
+- call bKash APIs
+- call Nagad APIs
+- create provider webhooks
+- fake successful provider verification
+
+The existing PaymentMethod values BKASH/NAGAD may be used to label internal/demo payment records.
+
+Real provider integration will be a later dedicated phase.
+
+==================================================
+27. LATE FEES
+==================================================
+
+Do NOT implement automatic late fees.
+
+Overdue logic is only:
+
+current date > dueDate
+AND remainingAmount > 0
+
+â†’ OVERDUE
+
+No additional fee calculation.
+
+==================================================
+28. TEST DATA
+==================================================
+
+Use the existing seeded data.
+
+Do not destroy or reset the database.
+
+You may create additional temporary test records if necessary.
+
+Clean up temporary records after testing where safe.
+
+Do NOT run:
+
+prisma migrate reset
+
+Do NOT run:
+
+prisma db push
+
+Do not modify the Prisma schema.
+
+==================================================
+29. REQUIRED TESTS
+==================================================
+
+A. BILL CREATION
+
+1. Owner creates bill for lease in own property.
+2. Admin creates bill.
+3. Tenant cannot create bill.
+4. Owner cannot create bill for another owner's lease.
+5. Duplicate billing month is rejected.
+6. Invalid BillItemType rejected.
+7. Negative item amount rejected.
+8. Empty item list rejected.
+9. Backend calculates total correctly.
+
+Test example:
+
+RENT              25000
+ELECTRICITY        3200
+WATER               800
+GAS                1080
+SERVICE_CHARGE     2000
+PARKING            1500
+
+Expected:
+
+33580.00
+
+B. BILL ACCESS
+
+10. Owner sees own property bills.
+11. Owner cannot see another owner's bills.
+12. Tenant sees own bills.
+13. Tenant cannot see another tenant's bill.
+14. Admin sees all bills.
+15. ID tampering cannot bypass authorization.
+
+C. PAYMENTS
+
+16. Tenant creates payment for own bill.
+17. Tenant cannot create payment for another tenant.
+18. Payment amount > remaining rejected.
+19. Zero payment rejected.
+20. Negative payment rejected.
+21. Partial payment works.
+22. PENDING payment does not reduce paid amount.
+23. FAILED payment does not reduce paid amount.
+
+D. PAYMENT VERIFICATION
+
+24. Tenant cannot verify own payment.
+25. Authorized admin can verify payment.
+26. Verification generates receipt number.
+27. VERIFIED payment reduces remaining balance.
+28. Bill status updates correctly.
+
+E. FULL PAYMENT
+
+Example:
+
+Bill:
+33580
+
+Payment:
+10000 VERIFIED
+
+Then:
+
+paidAmount = 10000
+remainingAmount = 23580
+status = PENDING
+
+Then another:
+
+23580 VERIFIED
+
+Expected:
+
+paidAmount = 33580
+remainingAmount = 0
+status = PAID
+
+F. OVERDUE
+
+29. Create/test bill with past due date and remaining balance.
+Expected:
+OVERDUE
+
+30. Fully paid bill with past due date:
+Expected:
+PAID
+
+G. FINANCIAL CONSISTENCY
+
+31. Bill total always equals sum of BillItems.
+32. Paid amount equals sum of VERIFIED payments.
+33. Remaining = total - paid.
+34. No overpayment.
+35. Decimal values remain accurate.
+
+H. DELETION SAFETY
+
+36. Bill with payment cannot be deleted.
+37. Historical financial data is preserved.
+
+I. REGRESSION
+
+38. Phase 2 authentication still works.
+39. Phase 3 property routes still work.
+40. Phase 3 unit routes still work.
+41. Phase 3 lease routes still work.
+42. `/api/health` still works.
+
+==================================================
+30. FINAL REPORT
+==================================================
+
+After implementation and testing, provide:
+
+Files created/modified:
+- ...
+
+Endpoints:
+- ...
+
+Bills:
+- CRUD PASS/FAIL
+- Owner scoping PASS/FAIL
+- Tenant scoping PASS/FAIL
+- Admin access PASS/FAIL
+- Bill total calculation PASS/FAIL
+- Duplicate billing month protection PASS/FAIL
+
+Bill Items:
+- Validation PASS/FAIL
+- Decimal calculation PASS/FAIL
+- Total consistency PASS/FAIL
+
+Payments:
+- Creation PASS/FAIL
+- Partial payment PASS/FAIL
+- Overpayment prevention PASS/FAIL
+- Verification PASS/FAIL
+- Receipt generation PASS/FAIL
+
+Bill status:
+- PENDING PASS/FAIL
+- PAID PASS/FAIL
+- OVERDUE PASS/FAIL
+
+Security:
+- Owner isolation PASS/FAIL
+- Tenant isolation PASS/FAIL
+- Admin access PASS/FAIL
+- ID tampering protection PASS/FAIL
+
+Regression:
+- Phase 2 PASS/FAIL
+- Phase 3 PASS/FAIL
+- Health endpoint PASS/FAIL
+
+Database schema changes:
+- NONE
+or
+- describe exact changes
+
+Warnings:
+- ...
+
+Unresolved issues:
+- ...
+
+STOP after Phase 4.
+
+DO NOT begin Phase 5.
+DO NOT implement real bKash/Nagad integration.
+DO NOT modify frontend.
