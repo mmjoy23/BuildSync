@@ -124,6 +124,7 @@ model User {
   conversationParticipants ConversationParticipant[] @relation("UserConversations")
   messages                 Message[]                 @relation("UserMessages")
   supportTickets           SupportTicket[]           @relation("UserSupportTickets")
+  notifications            Notification[]            @relation("UserNotifications")
 
   @@map("users")
 }
@@ -453,4 +454,23 @@ model SystemSetting {
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
   @@map("system_settings")
+}
+
+// 18. Notification Model
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String   @default("GENERAL")
+  title     String
+  message   String   @db.Text
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  // Relations
+  user User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@map("notifications")
 }

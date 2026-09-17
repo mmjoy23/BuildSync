@@ -5,6 +5,7 @@ import propertyRoutes from './property.routes.js';
 import leaseRoutes from './lease.routes.js';
 import billRoutes from './bill.routes.js';
 import paymentRoutes from './payment.routes.js';
+import notificationRoutes from './notification.routes.js';
 import { BillController } from '../controllers/bill.controller.js';
 import { LeaseController } from '../controllers/lease.controller.js';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
@@ -17,6 +18,7 @@ router.use('/properties', propertyRoutes);
 router.use('/leases', leaseRoutes);
 router.use('/bills', billRoutes);
 router.use('/payments', paymentRoutes);
+router.use('/notifications', notificationRoutes);
 
 // Dedicated Tenant endpoints
 router.get('/tenant/bills', requireAuth, requireRole('TENANT'), BillController.getTenantBills);

@@ -49,7 +49,6 @@ function TenantLayout() {
           searchPlaceholder="Search bills, requests, notices..."
           userName={sessionTenant.name}
           userRole="Tenant"
-          notificationCount={2}
           onUserAction={(action) => {
             if (action === 'logout') { logout(); navigate('/login', { replace: true }); }
             if (action === 'settings') navigate('/tenant/profile');

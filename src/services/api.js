@@ -154,6 +154,14 @@ export const api = {
     verify: (id) => api.patch(`/payments/${id}/verify`),
     getReceipt: (id) => api.get(`/payments/${id}/receipt`),
   },
+
+  // Notifications APIs
+  notifications: {
+    getAll: (limit = 50) => api.get(`/notifications?limit=${limit}`),
+    getUnreadCount: () => api.get('/notifications/unread-count'),
+    markAsRead: (id) => api.patch(`/notifications/${id}/read`),
+    markAllAsRead: () => api.patch('/notifications/read-all'),
+  },
 };
 
 export default api;

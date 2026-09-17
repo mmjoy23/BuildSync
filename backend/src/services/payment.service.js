@@ -1,16 +1,41 @@
 import prisma from '../config/prisma.js';
 import { Prisma } from '@prisma/client';
+import { NotificationService } from './notification.service.js';
 
 /**
  * Generates a unique receipt number: BS-YYYY-NNNNNN.
- * Sequence is count of existing VERIFIED payments + 1.
- * DB unique constraint guards against race conditions.
+ * Derived from the highest existing receipt sequence for the year, not from payment count,
+ * so it is collision-safe even when non-sequential receipts exist in the database.
  */
 async function generateReceiptNumber(tx) {
   const year = new Date().getFullYear();
-  const count = await tx.payment.count({ where: { status: 'VERIFIED' } });
-  const seq = String(count + 1).padStart(6, '0');
-  return `BS-${year}-${seq}`;
+  const prefix = `BS-${year}-`;
+
+  // Find the highest existing sequence number for this year
+  const last = await tx.payment.findFirst({
+    where: { receiptNumber: { startsWith: prefix } },
+    orderBy: { receiptNumber: 'desc' },
+    select: { receiptNumber: true },
+  });
+
+  let seq = 1;
+  if (last?.receiptNumber) {
+    const suffix = last.receiptNumber.slice(prefix.length);
+    const parsed = parseInt(suffix, 10);
+    if (!isNaN(parsed)) {
+      seq = parsed + 1;
+    }
+  }
+
+  // Loop until we find an unused candidate (guards against concurrent inserts)
+  let candidate = `${prefix}${String(seq).padStart(6, '0')}`;
+  let exists = await tx.payment.findUnique({ where: { receiptNumber: candidate } });
+  while (exists) {
+    seq++;
+    candidate = `${prefix}${String(seq).padStart(6, '0')}`;
+    exists = await tx.payment.findUnique({ where: { receiptNumber: candidate } });
+  }
+  return candidate;
 }
 
 /** Standard include object for payment queries. */
@@ -128,6 +153,18 @@ export class PaymentService {
         },
         include: buildPaymentInclude(),
       });
+
+      // Notify the property owner that a tenant has submitted a payment
+      const ownerId = bill.lease.unit.property.ownerId;
+      if (ownerId) {
+        await NotificationService.createNotification({
+          userId: ownerId,
+          type: 'PAYMENT_SUBMITTED',
+          title: 'New Payment Submitted',
+          message: `Tenant has submitted a payment of ৳${paymentAmount} via ${data.method} for ${bill.billingMonth}.`,
+        });
+      }
+
       return payment;
     } catch (e) {
       if (e.code === 'P2002' && e.meta?.target?.includes('transaction_id')) {
@@ -302,6 +339,30 @@ export class PaymentService {
         where: { id: bill.id },
         data: { status: newBillStatus },
       });
+
+      // 1. Notify tenant: Payment Verified
+      await NotificationService.createNotification(
+        {
+          userId: payment.tenantId,
+          type: 'PAYMENT_VERIFIED',
+          title: 'Payment Verified',
+          message: `Your payment of ৳${paymentAmount} for ${bill.billingMonth} has been verified successfully. Receipt: ${receiptNumber}.`,
+        },
+        tx
+      );
+
+      // 2. If bill transitioned to PAID, notify tenant: Bill Paid
+      if (newBillStatus === 'PAID' && bill.status !== 'PAID') {
+        await NotificationService.createNotification(
+          {
+            userId: payment.tenantId,
+            type: 'BILL_PAID',
+            title: 'Bill Paid',
+            message: `Your bill for ${bill.billingMonth} (Total: ৳${billTotal}) has been fully paid.`,
+          },
+          tx
+        );
+      }
 
       return { payment: verifiedPayment, billStatus: newBillStatus };
     });

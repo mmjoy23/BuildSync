@@ -48,7 +48,6 @@ function AdminLayout() {
           searchPlaceholder="Search system users, logs, tickets..."
           userName={sessionAdmin.name}
           userRole="Admin"
-          notificationCount={7}
           onUserAction={(action) => {
             if (action === 'logout') { logout(); navigate('/login', { replace: true }); }
             if (action === 'settings') navigate('/admin/settings');

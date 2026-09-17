@@ -1,5 +1,6 @@
 import prisma from '../config/prisma.js';
 import { Prisma } from '@prisma/client';
+import { NotificationService } from './notification.service.js';
 
 export class BillService {
   /**
@@ -62,7 +63,7 @@ export class BillService {
       return acc.add(itemAmount);
     }, new Prisma.Decimal(0));
 
-    // 5. Database transaction: Create Bill and all BillItems together
+    // 5. Database transaction: Create Bill, BillItems, and notify Tenant atomically
     const newBill = await prisma.$transaction(async (tx) => {
       const bill = await tx.bill.create({
         data: {
@@ -97,6 +98,17 @@ export class BillService {
           },
         },
       });
+
+      // Notify the tenant about the new bill
+      await NotificationService.createNotification(
+        {
+          userId: lease.tenantId,
+          type: 'BILL_CREATED',
+          title: 'New Bill Available',
+          message: `A new bill of ৳${calculatedTotal} for ${data.billingMonth} has been generated for your lease.`,
+        },
+        tx
+      );
 
       return bill;
     });

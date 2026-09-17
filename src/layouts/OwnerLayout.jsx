@@ -50,7 +50,6 @@ function OwnerLayout() {
           searchPlaceholder="Search anything..."
           userName={sessionOwner.name}
           userRole="Owner"
-          notificationCount={4}
           onUserAction={(action) => {
             if (action === 'logout') { logout(); navigate('/login', { replace: true }); }
             if (action === 'settings') navigate('/owner/settings');

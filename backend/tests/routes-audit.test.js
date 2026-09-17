@@ -77,9 +77,14 @@ describe('PART 12: API Route Audit', () => {
     { method: 'GET', path: '/api/payments/:id' },
     { method: 'PATCH', path: '/api/payments/:id/verify' },
     { method: 'GET', path: '/api/payments/:id/receipt' },
+    // NOTIFICATIONS
+    { method: 'GET', path: '/api/notifications' },
+    { method: 'GET', path: '/api/notifications/unread-count' },
+    { method: 'PATCH', path: '/api/notifications/read-all' },
+    { method: 'PATCH', path: '/api/notifications/:id/read' },
   ];
 
-  it('All 29 specified routes are properly registered', () => {
+  it('All 33 specified routes are properly registered', () => {
     const registered = getRegisteredRoutes();
     for (const exp of expectedRoutes) {
       const match = registered.find(
